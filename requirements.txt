@@ -1,0 +1,7 @@
+streamlit
+pandas
+numpy
+matplotlib
+pulp
+openpyxl
+PuLP==2.7.0
