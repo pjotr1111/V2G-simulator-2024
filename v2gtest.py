@@ -97,7 +97,7 @@ if df_base.isnull().any().any():
     st.error("❌ Data bevat lege waarden"); st.stop()
 
 # ─────────────────────────────── 4  Week-planner-UI (ongew.)
-st.header("📆 Weekplanning – beschikbaarheid")
+st.header("📆 Weekplanning  beschikbaarheid hier beneden invullen ⬇")
 st.markdown("""
 **Hoe vult u de weekplanning in?**
 
