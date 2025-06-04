@@ -36,13 +36,8 @@ st.markdown("""
 
 Deze simulator berekent hoeveel u met uw elektrische auto, zonnepanelen en een bidirectionele laadpaal kunt besparen op uw energierekening!
 
-Om een zo realistisch mogelijke berekening te maken, vult u het volgende in:
-- De capaciteit en laadsnelheid van uw batterij en laadpaal
-- Het opwekvermogen van uw zonnepanelen
-- Uw gemiddelde verbruik per uur tijdens het rijden
-- De momenten waarop uw voertuig thuis beschikbaar is, in gebruik is of afwezig is
-
-Op basis van deze gegevens simuleert de tool hoe u uw energie slim kunt verdelen. De tool regelt hoeveel energie u zelf opwekt, opslaat of teruglevert aan het net waardoor u inzichtelijk krijgt hoeveel u bespaart ten opzichte van een vast stroomtarief!
+Om een zo realistisch mogelijke berekening te maken moet u alle parameters aanpassen naar uw situatie.
+Op basis van de ingevoerde gegevens simuleert de tool hoe u uw energie slim kunt verdelen. De tool regelt hoeveel energie u zelf opwekt, opslaat of teruglevert aan het net waardoor u inzichtelijk krijgt hoeveel u bespaart ten opzichte van een vast stroomtarief!
 """)
 # ─────────────────────────────── 1  Sidebar-input
 with st.sidebar:
