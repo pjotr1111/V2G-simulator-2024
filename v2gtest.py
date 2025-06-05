@@ -301,7 +301,7 @@ plot_df = dsel.copy()
 plot_df["grid_to_batt"] = plot_df["grid_to_batt"].clip(lower=0)
 
 # b) filter numerieke ruis (< 0,001 kWh)
-eps  = 1e-3
+eps  = 10e-3
 cols = ["grid_to_batt", "pv_to_batt",
         "discharge_home", "discharge_grid",
         "import", "export"]
