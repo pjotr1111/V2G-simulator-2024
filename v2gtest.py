@@ -294,23 +294,47 @@ chosen=st.date_input("Kies dag",value=days[0].date(),
                      min_value=days.min().date(),max_value=days.max().date())
 dsel=df.loc[str(chosen)]
 
-fig,ax_p=plt.subplots(figsize=(12,4))
-ax_p.plot(dsel.index,dsel["Inkoop"],label="Inkoopprijs",color="tab:blue")
-ax_p.plot(dsel.index,dsel["Verkoop"],label="Verkoopprijs",color="tab:cyan")
-ax_p.set_ylabel("Prijs (€/kWh)"); ax_p.tick_params(axis="x",rotation=45)
+# ---------- CLEAN-UP VOOR PLOTTEN ----------
+plot_df = dsel.copy()
 
-ax_e=ax_p.twinx()
-ax_e.bar(dsel.index,dsel["pv_to_batt"],width=0.03,label="Laden PV→Accu",color="forestgreen")
-ax_e.bar(dsel.index,dsel["grid_to_batt"],width=0.03,bottom=dsel["pv_to_batt"],label="Laden Net→Accu",color="limegreen")
-ax_e.bar(dsel.index,-dsel["discharge_home"],width=0.03,label="Ontl → Huis",color="orange")
-ax_e.bar(dsel.index,-dsel["discharge_grid"],width=0.03,label="Ontl → Net",color="red",alpha=0.6)
-ax_e.bar(dsel.index,dsel["import"],width=0.02,label="Import Net→Huis",color="grey",alpha=0.25)
-ax_e.bar(dsel.index,-dsel["export"],width=0.02,label="Export Accu→Net",color="black",alpha=0.25)
-ax_e.plot(dsel.index,dsel["soc"]*100,label="SOC (%)",color="tab:orange",linewidth=2)
+# a) knip negatieve lading-net-waarden weg
+plot_df["grid_to_batt"] = plot_df["grid_to_batt"].clip(lower=0)
+
+# b) filter numerieke ruis (< 0,001 kWh)
+eps  = 1e-3
+cols = ["grid_to_batt", "pv_to_batt",
+        "discharge_home", "discharge_grid",
+        "import", "export"]
+plot_df[cols] = plot_df[cols].where(plot_df[cols].abs() > eps, 0)
+
+# ---------- PLOT MET plot_df ----------
+fig, ax_p = plt.subplots(figsize=(12, 4))
+ax_p.plot(plot_df.index, plot_df["Inkoop"],  label="Inkoopprijs",  color="tab:blue")
+ax_p.plot(plot_df.index, plot_df["Verkoop"], label="Verkoopprijs", color="tab:cyan")
+ax_p.set_ylabel("Prijs (€/kWh)")
+ax_p.tick_params(axis="x", rotation=45)
+
+ax_e = ax_p.twinx()
+ax_e.bar(plot_df.index,  plot_df["pv_to_batt"],
+         width=0.03, label="Laden PV→Accu", color="forestgreen")
+ax_e.bar(plot_df.index,  plot_df["grid_to_batt"],
+         width=0.03, bottom=plot_df["pv_to_batt"],
+         label="Laden Net→Accu", color="limegreen")
+ax_e.bar(plot_df.index, -plot_df["discharge_home"],
+         width=0.03, label="Ontl → Huis", color="orange")
+ax_e.bar(plot_df.index, -plot_df["discharge_grid"],
+         width=0.03, label="Ontl → Net", color="red", alpha=0.6)
+ax_e.bar(plot_df.index,  plot_df["import"],
+         width=0.02, label="Import Net→Huis", color="grey", alpha=0.25)
+ax_e.bar(plot_df.index, -plot_df["export"],
+         width=0.02, label="Export Accu→Net", color="black", alpha=0.25)
+ax_e.plot(plot_df.index, plot_df["soc"]*100,
+          label="SOC (%)", color="tab:orange", linewidth=2)
 ax_e.set_ylabel("Energie (kWh) / SOC (%)")
 
-h1,l1=ax_p.get_legend_handles_labels()
-h2,l2=ax_e.get_legend_handles_labels()
-ax_p.legend(h1+h2,l1+l2,loc="upper left",ncol=2)
+h1, l1 = ax_p.get_legend_handles_labels()
+h2, l2 = ax_e.get_legend_handles_labels()
+ax_p.legend(h1 + h2, l1 + l2, loc="upper left", ncol=2)
 plt.tight_layout()
 st.pyplot(fig)
+
