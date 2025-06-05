@@ -288,53 +288,72 @@ detail=detail.rename(columns={
 st.dataframe(detail,use_container_width=True)
 
 # ▸ Interactieve daggrafiek
-st.subheader("📈 Dagselectie: kies de gewenste dag en de grafiek laat zien wat er die dag is gebeurd")
-days=df.index.normalize().unique()
-chosen=st.date_input("Kies dag",value=days[0].date(),
-                     min_value=days.min().date(),max_value=days.max().date())
-dsel=df.loc[str(chosen)]
+st.subheader("📈 Dagselectie – zie per uur wat er gebeurde")
+days   = df.index.normalize().unique()
+chosen = st.date_input(
+    "Kies dag", value=days[0].date(),
+    min_value=days.min().date(), max_value=days.max().date()
+)
+dsel = df.loc[str(chosen)].copy()
 
 # ---------- CLEAN-UP VOOR PLOTTEN ----------
 plot_df = dsel.copy()
 
-# a) knip negatieve lading-net-waarden weg
+# a) laad-bars uit het net mogen nooit negatief zijn
 plot_df["grid_to_batt"] = plot_df["grid_to_batt"].clip(lower=0)
 
-# b) filter numerieke ruis (< 0,001 kWh)
-eps  = 10e-3
+# b) minieme solver-ruis (< 1 Wh) wegfilteren
+eps  = 1e-3           # 0,001 kWh = 1 Wh
 cols = ["grid_to_batt", "pv_to_batt",
         "discharge_home", "discharge_grid",
         "import", "export"]
 plot_df[cols] = plot_df[cols].where(plot_df[cols].abs() > eps, 0)
 
-# ---------- PLOT MET plot_df ----------
-fig, ax_p = plt.subplots(figsize=(12, 4))
-ax_p.plot(plot_df.index, plot_df["Inkoop"],  label="Inkoopprijs",  color="tab:blue")
-ax_p.plot(plot_df.index, plot_df["Verkoop"], label="Verkoopprijs", color="tab:cyan")
-ax_p.set_ylabel("Prijs (€/kWh)")
-ax_p.tick_params(axis="x", rotation=45)
+# ---------- PLOT ----------
+fig, ax_price = plt.subplots(figsize=(12, 4))
 
-ax_e = ax_p.twinx()
+# ▸ prijslijnen
+ax_price.plot(plot_df.index, plot_df["Inkoop"],
+              label="Inkoopprijs",  color="tab:blue")
+ax_price.plot(plot_df.index, plot_df["Verkoop"],
+              label="Verkoopprijs", color="tab:cyan")
+ax_price.set_ylabel("Prijs (€/kWh)")
+ax_price.tick_params(axis="x", rotation=45)
+
+# ▸ energie-bars + SOC
+ax_e = ax_price.twinx()
+
+# laden (positief, boven x-as)
 ax_e.bar(plot_df.index,  plot_df["pv_to_batt"],
-         width=0.03, label="Laden PV→Accu", color="forestgreen")
+         width=0.9/24, label="Laden PV→Accu",  color="forestgreen", align="center")
 ax_e.bar(plot_df.index,  plot_df["grid_to_batt"],
-         width=0.03, bottom=plot_df["pv_to_batt"],
-         label="Laden Net→Accu", color="limegreen")
-ax_e.bar(plot_df.index, -plot_df["discharge_home"],
-         width=0.03, label="Ontl → Huis", color="orange")
-ax_e.bar(plot_df.index, -plot_df["discharge_grid"],
-         width=0.03, label="Ontl → Net", color="red", alpha=0.6)
-ax_e.bar(plot_df.index,  plot_df["import"],
-         width=0.02, label="Import Net→Huis", color="grey", alpha=0.25)
-ax_e.bar(plot_df.index, -plot_df["export"],
-         width=0.02, label="Export Accu→Net", color="black", alpha=0.25)
-ax_e.plot(plot_df.index, plot_df["soc"]*100,
-          label="SOC (%)", color="tab:orange", linewidth=2)
-ax_e.set_ylabel("Energie (kWh) / SOC (%)")
+         width=0.9/24, bottom=plot_df["pv_to_batt"],
+         label="Laden Net→Accu", color="limegreen", align="center")
 
-h1, l1 = ax_p.get_legend_handles_labels()
+# ontladen (negatief, onder x-as)
+ax_e.bar(plot_df.index, -plot_df["discharge_home"],
+         width=0.9/24, label="Ontl → Huis",  color="orange", align="center")
+ax_e.bar(plot_df.index, -plot_df["discharge_grid"],
+         width=0.9/24, label="Ontl → Net",   color="red",    alpha=0.6, align="center")
+
+# net-import/export bars (kleiner, transparant)
+ax_e.bar(plot_df.index,  plot_df["import"],
+         width=0.6/24, label="Import Net→Huis",
+         color="grey",  alpha=0.25, align="center")
+ax_e.bar(plot_df.index, -plot_df["export"],
+         width=0.6/24, label="Export Accu→Net",
+         color="black", alpha=0.25, align="center")
+
+# SOC-lijn
+ax_e.plot(plot_df.index, plot_df["soc"] * 100,
+          label="SOC (%)", color="tab:orange", linewidth=2)
+ax_e.set_ylabel("Energie (kWh)  /  SOC (%)")
+
+# ▸ gecombineerde legenda
+h1, l1 = ax_price.get_legend_handles_labels()
 h2, l2 = ax_e.get_legend_handles_labels()
-ax_p.legend(h1 + h2, l1 + l2, loc="upper left", ncol=2)
+ax_price.legend(h1 + h2, l1 + l2, loc="upper left", ncol=2)
+
 plt.tight_layout()
 st.pyplot(fig)
 
